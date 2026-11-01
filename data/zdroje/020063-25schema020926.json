@@ -1,0 +1,99 @@
+{
+  "@context": ["http://www.w3.org/ns/csvw",{"@language": "cs"}],
+  "url": "020063-25data020926.csv",
+  "tableSchema": {
+    "columns": [{
+      "name": "idhod",
+      "titles": "idhod",
+      "dc:description":"unikátní identifikátor údaje Veřejné databáze ČSÚ",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "hodnota",
+      "titles": "hodnota",
+      "dc:description":"zjištěná hodnota",
+      "required": true,
+      "datatype": "number"
+    }, {
+      "name": "duvernost",
+      "titles": "duvernost",
+      "dc:description":"příznak důvěrnosti",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "stapro_kod",
+      "titles": "stapro_kod",
+      "dc:description":"kód statistické proměnné ze systému SMS UKAZ",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "stapro_txt",
+      "titles": "stapro_txt",
+      "dc:description":"název statistické proměnné",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "kat_cis",
+      "titles": "kat_cis",
+      "dc:description":"číselník pro kategorii ubytovacího zařízení",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "kat_kod",
+      "titles": "kat_kod",
+      "dc:description":"kód kategorie ubytovacího zařízení",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "uzemiz_cis",
+      "titles": "uzemiz_cis",
+      "dc:description":"číselník pro zemi původu, odkud hosté přicestovali, pro úhrn není vyplněno, pro rezidenty se používá číselník 86, pro nerezidenty číselník 5898",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "uzemiz_kod",
+      "titles": "uzemiz_kod",
+      "dc:description":"kód země původu, ze které hosté přicestovali, pro úhrn není vyplněno, pro rezidenty se používá kód 203, pro nerezidenty kód 17",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "uzemiz_txt",
+      "titles": "uzemiz_txt",
+      "dc:description":"text položky z číselníku zemí původu",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "rok",
+      "titles": "rok",
+      "dc:description":"rok referenčního období - ve formátu RRRR",
+      "required": true,
+      "datatype": "number"
+    }, {
+      "name": "mesic",
+      "titles": "mesic",
+      "dc:description":"měsíc referenčního období",
+      "required": true,
+      "datatype": "number"
+    },  {
+      "name": "uzemi_cis",
+      "titles": "uzemi_cis",
+      "dc:description":"kód číselníku pro referenční území, číselník odpovídá typologii území, stát (Česká republika) má kód 97, kraje kód 100",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "uzemi_kod",
+      "titles": "uzemi_kod",
+      "dc:description":"kód položky z číselníku pro referenční území",
+      "required": true,
+      "datatype": "string"
+    }, {
+      "name": "uzemi_txt",
+      "titles": "uzemi_txt",
+      "dc:description":"text položky z číselníku pro referenční území",
+      "required": true,
+      "datatype": "string"
+    }
+    ],
+    "primaryKey": "idhod"
+  }
+}

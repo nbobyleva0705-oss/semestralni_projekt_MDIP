@@ -1,0 +1,5 @@
+# Virtuální prostředí si každý vytvoří sám
+.venv/
+__pycache__/
+# Nastavení PyCharmu
+.idea/

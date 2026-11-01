@@ -1,0 +1,6 @@
+# Ověřeno na Pythonu 3.12 / 3.13. Stejné verze jako ve workshopu MDIP_public + openpyxl pro čtení XLSX.
+plotly==7.1.0
+dash==4.4.1
+pandas==2.2.3
+numpy==2.3.5
+openpyxl==3.1.5
