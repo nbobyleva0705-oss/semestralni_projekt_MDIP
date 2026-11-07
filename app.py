@@ -46,18 +46,30 @@ MESICE = ["leden", "únor", "březen", "duben", "květen", "červen", "červenec
 MESICE_ZKR = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"]
 
 # Vzhled: barvy prověřené na rozlišitelnost i pro poruchy barvocitu.
-BARVA_REZIDENTI = "#2a78d6"     # modrá
+BARVA_REZIDENTI = "#174f94"     # tmavší modrá: i na černobílé kopii odlišná od oranžové
 BARVA_NEREZIDENTI = "#eb6834"   # oranžová
 BARVA_SEDA = "#b9b8b2"
+BARVA_AKCENT = "#34443a"     # tmavá šalvějová: služební prvky (hlavička, proužky, posuvník, záložky)
+BARVA_CELKEM = "#5c7264"     # šalvějová: všichni hosté dohromady
+BARVA_CELKEM_NEUPLNY = "#c5d1c8"   # světlá šalvějová: neúplný rok
 TMAVA = "#0b0b0b"
 SEDY_TEXT = "#52514e"
 POZADI = "#f4f4f1"
 PLOCHA = "#fcfcfb"
-MODRA_SKALA = ["#e6f0fb", "#a9cbf2", "#5d9ee6", "#2a78d6", "#174f94", "#0b2e5c"]
+SALVEJOVA_SKALA = ["#f1f4f1", "#d2ddd4", "#a8bbad", "#7d9585", "#536a5b", "#2c3a31"]  # všichni hosté
+ORANZOVA_SKALA = ["#fdeee6", "#f8c9ae", "#f19a6c", "#eb6834", "#b8461a", "#7a2a0c"]   # zahraniční hosté
+MODRA_SKALA_REZ = ["#eef3fa", "#c9d8ee", "#94b3dc", "#5a88c4", "#174f94", "#0d2f5a"]  # rezidenti
+# Skupiny hostů pro záložku Obnova: popisek, barva sloupců, světlá barva, škála.
+# Barvy drží pravidlo: šalvějová = všichni, modrá = rezidenti, oranžová = nerezidenti.
+SKUPINY = {
+    "celkem": ("Všichni hosté", BARVA_CELKEM, BARVA_CELKEM_NEUPLNY, SALVEJOVA_SKALA),
+    "rezidenti": ("Rezidenti", BARVA_REZIDENTI, "#b9cbe6", MODRA_SKALA_REZ),
+    "nerezidenti": ("Nerezidenti", BARVA_NEREZIDENTI, "#f8c9ae", ORANZOVA_SKALA),
+}
 
 STYL_RADKU = {"display": "flex", "flexWrap": "wrap", "gap": "18px"}
 STYL_KARTY = {"backgroundColor": PLOCHA, "borderRadius": "12px", "padding": "20px",
-              "flex": "1 1 200px", "minWidth": 0, "borderTop": f"4px solid {BARVA_REZIDENTI}",
+              "flex": "1 1 200px", "minWidth": 0, "borderTop": f"4px solid {BARVA_AKCENT}",
               "boxShadow": "0 2px 8px #10243b10"}
 STYL_PANELU = {"backgroundColor": PLOCHA, "borderRadius": "12px", "overflow": "hidden",
                "flex": "1 1 480px", "minWidth": 0}
@@ -160,7 +172,7 @@ def graf_rocni_souhrn(uzemi, ukazatel, od, do):
     rocne["neuplny"] = rocne["rok"] == NEUPLNY_ROK
     if NEUPLNY_ROK in rocne["rok"].values:
         rocne.loc[rocne["neuplny"], "popisek"] = f"{NEUPLNY_ROK}*"
-    barvy = [BARVA_SEDA if n else BARVA_REZIDENTI for n in rocne["neuplny"]]
+    barvy = [BARVA_CELKEM_NEUPLNY if n else BARVA_CELKEM for n in rocne["neuplny"]]
     fig = go.Figure(go.Bar(
         x=rocne["popisek"], y=rocne[ukazatel], marker_color=barvy,
         marker_pattern_shape=["/" if n else "" for n in rocne["neuplny"]],
@@ -188,7 +200,7 @@ def graf_sezonnost(uzemi, ukazatel, od, do):
     tabulka = tabulka.reindex(range(1, 13))  # chybějící měsíce zůstanou prázdné, ne nulové
     fig = go.Figure(go.Heatmap(
         z=tabulka.values, x=[str(r) for r in tabulka.columns], y=MESICE,
-        colorscale=MODRA_SKALA, xgap=2, ygap=2, hoverongaps=False,
+        colorscale=SALVEJOVA_SKALA, xgap=2, ygap=2, hoverongaps=False,
         colorbar=dict(title=dict(text=UKAZATELE[ukazatel], side="right"), tickformat=",.0f"),
         hovertemplate="%{y} %{x}<br>%{z:,.0f}<extra></extra>"))
     fig.update_layout(title=f"{UKAZATELE[ukazatel]}: měsíc × rok")
@@ -235,7 +247,7 @@ def graf_mapa_kraju(ukazatel, od, do, zvyrazneny):
     tab = souhrn_kraju(ukazatel, od, do)
     fig = px.choropleth_map(
         tab, geojson=KRAJE_GEO, locations="uzemi", featureidkey="properties.kraj",
-        color="podil_nerez", color_continuous_scale=MODRA_SKALA, range_color=(0, 85),
+        color="podil_nerez", color_continuous_scale=ORANZOVA_SKALA, range_color=(0, 85),
         map_style="white-bg", center=dict(lat=49.8, lon=15.45), zoom=5.6, opacity=0.95,
         custom_data=["celkem", "nerezidenti"],
         title=f"Podíl zahraničních hostů podle krajů ({od}–{do})",
@@ -350,6 +362,109 @@ def graf_zmena_zemi(uzemi, ukazatel, od, do):
     return fig
 
 
+# Obnova po covidu (záložka 5) ------------------------------------------------
+# Index obnovy = hodnota roku v % roku 2019 (2019 = 100 %).
+# Srovnáváme s posledním úplným rokem vybraného období; neúplný 2026 nepočítáme.
+def posledni_rok_obnovy(do):
+# Vrátí rok, který se porovná s rokem 2019, nebo None, když období končí před rokem 2020.
+    b = do - 1 if do == NEUPLNY_ROK else do
+    return b if b >= 2020 else None
+
+
+def index_obnovy(ukazatel, skupina, do_roku):
+# Tabulka: řádky = kraje, sloupce = roky 2019..do_roku, hodnoty = % roku 2019.
+    data = df.loc[(df["uroven_uzemi"] == "kraj") & df["rok"].between(SROVNAVACI_ROK, do_roku)
+                  & (df["typ_rezidence"] == skupina)]
+    rocne = data.pivot_table(index="uzemi", columns="rok", values=ukazatel, aggfunc="sum")
+# Každý řádek vydělíme hodnotou roku 2019 (axis=0 = po řádcích) a převedeme na procenta.
+    return rocne.div(rocne[SROVNAVACI_ROK], axis=0) * 100
+
+
+def rok_navratu(radek):
+# První rok po pandemii, kdy kraj dosáhl aspoň 100 % roku 2019; None = zatím nedosáhl.
+    for rok, hodnota in radek.items():
+        if rok > SROVNAVACI_ROK and hodnota >= 100:
+            return rok
+    return None
+
+
+def graf_obnova_index(ukazatel, skupina, do, zvyrazneny):
+# Sloupce: kde je každý kraj v posledním úplném roce oproti roku 2019.
+    b = posledni_rok_obnovy(do)
+    popisek, barva, svetla, _ = SKUPINY[skupina]
+    if b is None:
+        return prazdny_graf("Obnova po covidu",
+                            "Vyberte období, které končí v roce 2020 nebo později.")
+# Hodnota posledního roku pro každý kraj, seřazená vzestupně (nejvyšší bude nahoře).
+    tab = index_obnovy(ukazatel, skupina, b)[b].sort_values()
+# Kraje pod úrovní 2019 světlejší a šrafované, ostatní plnou barvou skupiny.
+    pod = tab < 100
+    fig = go.Figure(go.Bar(
+        y=tab.index, x=tab.values, orientation="h",
+        marker_color=[svetla if p else barva for p in pod],
+        marker_pattern_shape=["/" if p else "" for p in pod],
+        marker_line_color=barva, marker_line_width=[1 if p else 0 for p in pod],
+# Vybraný kraj plně, ostatní poloprůhledně (stejně jako na záložce Kraje).
+        marker_opacity=[1 if zvyrazneny in ("Česko", k) else 0.4 for k in tab.index],
+        text=[format_cislo(v, 1) + " %" for v in tab.values], textposition="outside",
+        cliponaxis=False, textfont=dict(size=11, color=SEDY_TEXT),
+        hovertemplate="%{y}<br>" + str(b) + ": %{x:.1f} % roku 2019<extra></extra>"))
+# Svislá čára na 100 % = úroveň roku 2019.
+    fig.add_vline(x=100, line_dash="dash", line_color=TMAVA, line_width=1.5,
+                  annotation_text="úroveň 2019", annotation_position="top",
+                  annotation_font=dict(size=11, color=SEDY_TEXT))
+    fig.update_layout(title=f"{popisek}: {UKAZATELE[ukazatel].lower()} v roce {b} v % roku 2019"
+                            f"<br><sup>šrafované = v roce {b} pod úrovní roku 2019</sup>")
+# Osa od nuly (poctivé sloupce), s rezervou vpravo pro popisky.
+    fig.update_xaxes(range=[0, max(tab.max(), 100) * 1.15], ticksuffix=" %",
+                     title_text=f"% roku {SROVNAVACI_ROK}")
+    fig = uprav_graf(fig, vyska=460)
+    fig.update_layout(margin=dict(l=160, r=40, t=90, b=55))
+    return fig
+
+
+def graf_obnova_mapa(ukazatel, skupina, do, zvyrazneny):
+# Teplotní mapa kraj × rok: jak rychle se kraje vracely; ✓ = dosaženo 100 % roku 2019.
+    b = posledni_rok_obnovy(do)
+    popisek, _, _, skala = SKUPINY[skupina]
+    if b is None:
+        return prazdny_graf("Jak rychle se kraje vracely",
+                            "Vyberte období, které končí v roce 2020 nebo později.")
+    tab = index_obnovy(ukazatel, skupina, b).drop(columns=SROVNAVACI_ROK)
+# Pořadí řádků: kdo se vrátil dřív, je nahoře; kdo dosud ne, je dole.
+    navrat = tab.apply(rok_navratu, axis=1)
+    # Kraj, který se nevrátil (prázdná hodnota), dostane rok 9999, aby byl na konci.
+    poradi = sorted(tab.index, key=lambda k: (9999 if pd.isna(navrat[k]) else navrat[k], -tab.loc[k, b]))
+    tab = tab.loc[poradi]
+    roky = [str(r) for r in tab.columns]
+# Názvy krajů; vybraný kraj tučně (<b>…</b>).
+    nazvy = [f"<b>{k}</b>" if k == zvyrazneny else k for k in tab.index]
+    fig = go.Figure(go.Heatmap(
+        z=tab.values, x=roky, y=nazvy, colorscale=skala, zmin=0, zmax=max(130, tab.values.max()),
+        xgap=2, ygap=2, colorbar=dict(title=dict(text="% 2019", side="right"), ticksuffix=" %"),
+        hovertemplate="%{y}<br>%{x}: %{z:.1f} % roku 2019<extra></extra>"))
+# Do každé buňky číslo; ✓ tam, kde kraj dosáhl úrovně 2019. Barvu textu volíme podle
+# tmavosti buňky (bílý na tmavé, tmavý na světlé), aby byl vždy čitelný.
+    hranice = max(130, tab.values.max()) * 0.55
+    # Pozice buňky zadáváme pořadím (j, i): text "2020" by Plotly bral jako 2020. kategorii.
+    for i, kraj in enumerate(nazvy):
+        for j, rok in enumerate(roky):
+            v = tab.iloc[i, j]
+            # 99,5–99,9 % ukážeme s desetinou, aby po zaokrouhlení nevypadalo jako 100 bez ✓.
+            fig.add_annotation(x=j, y=i, showarrow=False,
+                               text=(format_cislo(v, 1) if 99.5 <= v < 100 else f"{v:.0f}")
+                               + (" ✓" if v >= 100 else ""),
+                               font=dict(size=11, color="white" if v > hranice else TMAVA))
+    fig.update_layout(title=f"Jak rychle se kraje vracely: {popisek.lower()}, "
+                            f"{UKAZATELE[ukazatel].lower()} v % roku 2019"
+                            "<br><sup>✓ = úroveň roku 2019 dosažena; nahoře kraje, které se vrátily nejdřív</sup>")
+    fig.update_yaxes(autorange="reversed", showgrid=False)
+    fig.update_xaxes(type="category", showgrid=False, title_text="Rok")
+    fig = uprav_graf(fig, vyska=460)
+    fig.update_layout(margin=dict(l=160, r=25, t=90, b=55))
+    return fig
+
+
 # Komentáře vypočtené z dat (mění se spolu s filtry) ---------------------------
 def komentar_vyvoj(uzemi, ukazatel):
     def rok(r, typ):
@@ -390,6 +505,33 @@ def komentar_kraje(ukazatel, od, do):
             f"{mimo.iloc[0]['uzemi']} ({format_cislo(mimo.iloc[0]['podil_nerez'], 1)} %).")
 
 
+def komentar_obnova(ukazatel, skupina, do):
+# Kdo se vrátil nejdřív a kdo je v posledním úplném roce stále pod úrovní 2019.
+    b = posledni_rok_obnovy(do)
+    if b is None:
+        return "Pro srovnání s rokem 2019 vyberte období, které končí v roce 2020 nebo později."
+    popisek = SKUPINY[skupina][0]
+    tab = index_obnovy(ukazatel, skupina, b)
+    navrat = tab.apply(rok_navratu, axis=1).dropna()
+    text = f"{popisek} ({UKAZATELE[ukazatel].lower()}): "
+    if not navrat.empty:
+        prvni = int(navrat.min())
+        rychle = ", ".join(k for k in navrat.index if navrat[k] == prvni)
+        text += f"nejrychleji, už v roce {prvni}, se na úroveň 2019 vrátily: {rychle}. "
+    pod = tab[b][tab[b] < 100].sort_values()
+    if pod.empty:
+        nejtesneji = tab[b].idxmin()
+        text += (f"V roce {b} jsou všechny kraje nad úrovní 2019, nejtěsněji "
+                 f"{nejtesneji} ({format_cislo(tab[b].min(), 1)} %).")
+    elif len(pod) == len(tab):
+        text += (f"V roce {b} jsou pod úrovní 2019 všechny kraje "
+                 f"(od {format_cislo(pod.min(), 1)} do {format_cislo(pod.max(), 1)} %).")
+    else:
+        seznam = ", ".join(f"{k} ({format_cislo(v, 1)} %)" for k, v in pod.items())
+        text += f"V roce {b} jsou pod úrovní 2019: {seznam}."
+    return text
+
+
 # 4. Komponenty a rozvržení ------------------------------------------------------
 def vytvor_kartu(nazev, id_hodnoty, vysvetleni):
     return html.Div([
@@ -415,7 +557,7 @@ def graf(id_grafu):
 
 def komentar(id_textu):
     return html.P(id=id_textu, role="status",
-                  style={"backgroundColor": PLOCHA, "borderLeft": f"4px solid {BARVA_REZIDENTI}",
+                  style={"backgroundColor": PLOCHA, "borderLeft": f"4px solid {BARVA_AKCENT}",
                          "padding": "14px 18px", "borderRadius": "8px", "margin": "0 0 18px",
                          "color": TMAVA, "fontSize": "15px"})
 
@@ -431,15 +573,15 @@ app.title = "Návrat turistů do Česka"
 app.layout = html.Div([
     html.Header([
         html.P("MDIP · INTERPRETACE A PREZENTACE DAT · SEMESTRÁLNÍ PRÁCE",
-               style={"color": "#a9cbf2", "fontSize": "13px", "fontWeight": "700",
+               style={"color": "#d8e0d8", "fontSize": "13px", "fontWeight": "700",
                       "letterSpacing": "2px", "margin": 0}),
         html.H1("Návrat turistů do Česka", style={"fontSize": "36px", "margin": "10px 0"}),
         html.P(f"Hosté a přenocování v hromadných ubytovacích zařízeních, "
                f"{popis_obdobi(PRVNI_ROK, POSLEDNI_ROK)}. Zdroj: ČSÚ.",
-               style={"color": "#d4dbe6", "margin": 0}),
+               style={"color": "#eef2ee", "margin": 0}),
         html.P(f"Autoři: {', '.join(AUTORI)}",
-               style={"color": "#a9cbf2", "margin": "12px 0 0", "fontSize": "14px"}),
-    ], style={"backgroundColor": "#0b2e5c", "color": "white", "padding": "28px",
+               style={"color": "#d8e0d8", "margin": "12px 0 0", "fontSize": "14px"}),
+    ], style={"backgroundColor": BARVA_AKCENT, "color": "white", "padding": "28px",
               "borderRadius": "14px", "marginBottom": "20px"}),
 
     html.Div([
@@ -487,6 +629,19 @@ app.layout = html.Div([
             html.Div(style={"height": "18px"}),
             html.Div([graf("graf-top-zeme"), graf("graf-zmena-zemi")], style=STYL_RADKU),
         ]),
+        dcc.Tab(label="Obnova po covidu", value="obnova", children=[
+            html.Div(style={"height": "18px"}),
+# Přepínač skupiny hostů jen pro tuto záložku.
+            html.Div([
+                html.Span("Skupina hostů: ", style={"fontWeight": "700", "marginRight": "10px"}),
+                dcc.RadioItems(id="skupina-obnova", value="celkem", inline=True,
+                               options=[{"label": f" {v[0]}", "value": k} for k, v in SKUPINY.items()],
+                               labelStyle={"marginRight": "18px"}),
+            ], style={"display": "flex", "flexWrap": "wrap", "alignItems": "center",
+                      "marginBottom": "14px"}),
+            komentar("text-obnova"),
+            html.Div([graf("graf-obnova-index"), graf("graf-obnova-mapa")], style=STYL_RADKU),
+        ]),
     ]),
 
     html.Details([
@@ -516,7 +671,8 @@ app.layout = html.Div([
         html.P(f"Semestrální práce MDIP, ZS 2026/2027. Autoři: {', '.join(AUTORI)}."),
     ], style={"fontSize": "12px", "color": SEDY_TEXT, "marginTop": "14px"}),
 ], style={"fontFamily": "Arial, sans-serif", "color": TMAVA, "backgroundColor": POZADI,
-          "maxWidth": "1320px", "margin": "0 auto", "padding": "24px"})
+          "maxWidth": "1320px", "margin": "0 auto", "padding": "24px",
+          "--Dash-Fill-Interactive-Strong": BARVA_AKCENT, "--Dash-Text-Primary": TMAVA})
 
 
 # 5. Callback: všechny výstupy počítáme ze stejného výběru ------------------------
@@ -537,11 +693,17 @@ app.layout = html.Div([
     Output("graf-kraje", "figure"),
     Output("graf-top-zeme", "figure"),
     Output("graf-zmena-zemi", "figure"),
+# Záložka 5: text + 2 grafy.
+    Output("text-obnova", "children"),
+    Output("graf-obnova-index", "figure"),
+    Output("graf-obnova-mapa", "figure"),
     Input("uzemi", "value"),
     Input("ukazatel", "value"),
     Input("roky", "value"),
+# Čtvrtý vstup: skupina hostů na záložce Obnova.
+    Input("skupina-obnova", "value"),
 )
-def aktualizuj_dashboard(uzemi, ukazatel, roky):
+def aktualizuj_dashboard(uzemi, ukazatel, roky, skupina):
     od, do = sorted(roky)
     celkem = vyber(uzemi, od, do, typ="celkem")
     nerez = vyber(uzemi, od, do, typ="nerezidenti")
@@ -570,6 +732,9 @@ def aktualizuj_dashboard(uzemi, ukazatel, roky):
         graf_kraje_sloupce(ukazatel, od, do, uzemi),
         graf_top_zeme(uzemi, ukazatel, od, do),
         graf_zmena_zemi(uzemi, ukazatel, od, do),
+        komentar_obnova(ukazatel, skupina, do),
+        graf_obnova_index(ukazatel, skupina, do, uzemi),
+        graf_obnova_mapa(ukazatel, skupina, do, uzemi),
     )
 
 

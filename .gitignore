@@ -3,3 +3,8 @@
 __pycache__/
 # Nastavení PyCharmu
 .idea/
+# Studijní kopie s ruskými komentáři
+app_komentare_RU.py
+# Dočasné zámky LibreOffice / Excelu
+.~lock.*
+~$*
