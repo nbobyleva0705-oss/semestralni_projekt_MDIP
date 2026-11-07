@@ -12,7 +12,8 @@ zařízení v Česku od ledna 2012 do srpna 2026.
    domácí, nebo zahraniční hosté?
 2. Jak silná je sezónnost a liší se mezi domácími a zahraničními hosty?
 3. Které kraje jsou „zahraniční“ a které „domácí“?
-4. Odkud hosté přijíždějí a jak se trhy změnily mezi lety 2019 a 2025?
+4. Odkud hosté přijíždějí a jak se trhy změnily mezi prvním a posledním úplným rokem vybraného období?
+5. Jak rychle se jednotlivé kraje po covidu vrátily na úroveň roku 2019 a které se tam ještě nedostaly?
 
 ## Struktura
 
@@ -54,7 +55,10 @@ Dashboard čte už připravený CSV. `priprava_dat.py` ho vytvoří znovu ze zdr
   - *Vývoj v čase* – měsíční řada rezidentů a nerezidentů, roční souhrn se srovnávací úrovní 2019.
   - *Sezónnost* – teplotní mapa měsíc × rok a průměrný měsíc.
   - *Kraje* – mapa podílu zahraničních hostů a pruhový graf krajů (vybraný kraj je zvýrazněn).
-  - *Země původu* – 10 nejčastějších zemí a srovnání 2019 vs. 2025.
+  - *Země původu* – 10 nejčastějších zemí a srovnání prvního a posledního úplného roku vybraného období
+    (výchozí nastavení: 2012 vs. 2025; neúplný rok 2026 se do srovnání nebere).
+  - *Obnova po covidu* – kraje v % roku 2019 v posledním úplném roce období a teplotní mapa let 2020–2025,
+    ze které je vidět, jak rychle se který kraj vracel; přepínač všichni hosté / rezidenti / nerezidenti.
 - Komentáře nad grafy se počítají z dat a mění se s filtry.
 
 ## Data
