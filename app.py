@@ -458,12 +458,18 @@ MALY_ZAKLAD = 1000      # trh s méně než 1 000 hosty v roce 2019: procenta js
 def graf_trhy_kraju(ukazatel, cil, zvyrazneny):
     """H: teplotní mapa Česko + kraje × hlavní trhy, změna zahraničních hostů 2019 → cíl v %.
 
-    Sloupce = 4 trhy s největším poklesem a 4 s největším přírůstkem v celém Česku.
+    Sloupce = 4 trhy s největším poklesem a 4 s největším přírůstkem počtu hostů v celém Česku.
+    Když tolik zemí nepřibylo (2020, 2021), zbytek doplní největší trhy roku 2019 – jinak by
+    se sem dostaly malé země (Malta, Island), které jen „nejméně ubyly“.
     Šedá = pokles, oranžová = růst, bílá = beze změny. Bledé buňky mají malý základ
     (méně než 1 000 hostů v roce 2019), kde i malá změna dá velké procento.
     """
     cesko = zmena_zemi("Česko", ukazatel, cil)
-    trhy = list(cesko.nsmallest(4, "zmena").index) + list(cesko.nlargest(4, "zmena").index[::-1])
+    pokles = list(cesko.nsmallest(4, "zmena").index)
+    rust = list(cesko[cesko["zmena"] > 0].nlargest(4, "zmena").index[::-1])
+    doplnek = [z for z in cesko.sort_values(ZAKLAD, ascending=False).index
+               if z not in pokles + rust][:4 - len(rust)]
+    trhy = pokles + doplnek + rust
     zkratky = {"Korejská republika": "Korea", "Velká Británie a Severní Irsko": "Velká Británie",
                "Spojené státy": "USA", "Nizozemské království": "Nizozemsko"}
     sloupce = [zkratky.get(z, z) for z in trhy]
@@ -506,7 +512,8 @@ def graf_trhy_kraju(ukazatel, cil, zvyrazneny):
                   line=dict(color=TMAVA, width=2))
     fig.update_layout(title=nadpis_grafu(
         f"H · Jak se změnily hlavní trhy v krajích ({ZAKLAD} → {cil}, %)",
-        "šedá = pokles, oranžová = růst; bledě = v roce 2019 méně než 1 000 hostů"))
+        "země vybrané podle změny počtu hostů v celém Česku; barva = změna v kraji v %<br>"
+        "bledě = v roce 2019 méně než 1 000 hostů"))
     fig.update_yaxes(autorange="reversed", showgrid=False)
     # Názvy zemí jsou nahoře vždy šikmo (−45°). Plotly by je jinak natáčel podle šířky okna
     # a na menší obrazovce by vjely do podtitulu. Při pevném úhlu známe jejich výšku předem
@@ -514,7 +521,23 @@ def graf_trhy_kraju(ukazatel, cil, zvyrazneny):
     fig.update_xaxes(side="top", showgrid=False, tickangle=-45, tickfont_size=12, automargin=False)
     fig = uprav_graf(fig)
     vyska_nazvu = (max(len(z) for z in sloupce) * 7 + 12) * 0.71
-    fig.update_layout(margin=dict(l=110, r=12, t=round(72 + vyska_nazvu), b=8),
+    # Nad názvy zemí popisek skupiny se závorkou, aby bylo jasné, proč jsou vybrané právě tyto země.
+    nahore = vyska_nazvu + 10
+    skupiny = [(0, 3, "největší pokles hostů", "#6f655c")]
+    if doplnek:
+        skupiny.append((4, 3 + len(doplnek), "velké trhy 2019" if rust else "největší trhy 2019", SEDY_TEXT))
+    if rust:
+        skupiny.append((4 + len(doplnek), 7, "největší přírůstek hostů", BARVA_NEREZIDENTI))
+    for a, b, text, barva in skupiny:
+        fig.add_shape(type="path", xref="x", yref="paper", ysizemode="pixel", yanchor=1,
+                      path=f"M {a - 0.42},{nahore} L {a - 0.42},{nahore + 6} "
+                           f"L {b + 0.42},{nahore + 6} L {b + 0.42},{nahore}",
+                      line=dict(color=barva, width=1.5))
+        fig.add_annotation(x=(a + b) / 2, y=1, xref="x", yref="paper", yanchor="bottom",
+                           yshift=nahore + 7, text=f"<b>{text}</b>", showarrow=False,
+                           font=dict(size=12, color=barva))
+    fig.add_vline(x=3.5, line_color=TMAVA, line_width=1.5)      # předěl mezi skupinami
+    fig.update_layout(margin=dict(l=110, r=40, t=round(116 + vyska_nazvu), b=8),
                       title=dict(yref="container", y=1, yanchor="top", pad=dict(t=22)))
     return fig
 
