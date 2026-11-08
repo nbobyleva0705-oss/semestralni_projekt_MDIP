@@ -508,9 +508,14 @@ def graf_trhy_kraju(ukazatel, cil, zvyrazneny):
         f"H · Jak se změnily hlavní trhy v krajích ({ZAKLAD} → {cil}, %)",
         "šedá = pokles, oranžová = růst; bledě = v roce 2019 méně než 1 000 hostů"))
     fig.update_yaxes(autorange="reversed", showgrid=False)
-    fig.update_xaxes(side="top", showgrid=False)
+    # Názvy zemí jsou nahoře vždy šikmo (−45°). Plotly by je jinak natáčel podle šířky okna
+    # a na menší obrazovce by vjely do podtitulu. Při pevném úhlu známe jejich výšku předem
+    # (podle nejdelšího názvu), takže horní okraj = místo pro nadpis + místo pro názvy zemí.
+    fig.update_xaxes(side="top", showgrid=False, tickangle=-45, tickfont_size=12, automargin=False)
     fig = uprav_graf(fig)
-    fig.update_layout(margin=dict(l=110, r=12, t=86, b=8))
+    vyska_nazvu = (max(len(z) for z in sloupce) * 7 + 12) * 0.71
+    fig.update_layout(margin=dict(l=110, r=12, t=round(72 + vyska_nazvu), b=8),
+                      title=dict(yref="container", y=1, yanchor="top", pad=dict(t=22)))
     return fig
 
 
