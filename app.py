@@ -567,7 +567,7 @@ def nadpis_odkud(uzemi, ukazatel, cil):
     prirustek = p.nlargest(3, "zmena")
     prirustek = prirustek[prirustek["zmena"] > 0]      # v roce 2020 nemusí přibýt nikdo
     if abs(zmena) < 3:
-        hlavni = "Zahraniční hosté se vrátili, ale jiní"
+        hlavni = f"Zahraniční hosté se vrátili ({format_zmena(zmena, 1)} %), ale jiní"
     elif zmena > 0:
         hlavni = f"Zahraničních {JEDNOTKA[ukazatel]} přibylo o {format_cislo(zmena, 1)} %"
     else:
