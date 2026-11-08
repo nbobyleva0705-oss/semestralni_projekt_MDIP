@@ -1,0 +1,84 @@
+/* Vzhled dashboardu: celá stránka na jednu obrazovku (výška okna = 100vh).
+   Dash tento soubor načte sám, protože leží ve složce assets. */
+
+body { margin: 0; background: #f4f4f1; }
+
+.stranka {
+  font-family: Arial, sans-serif; color: #0b0b0b; background: #f4f4f1;
+  box-sizing: border-box; height: 100vh; max-width: 1800px; margin: 0 auto;
+  padding: 10px 16px; display: flex; flex-direction: column; gap: 8px;
+}
+
+/* Hlavička na jeden řádek */
+.hlavicka {
+  background: #34443a; color: white; border-radius: 12px; padding: 10px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  position: relative;
+}
+.hlavicka h1 { font-size: 22px; margin: 0; }
+.hlavicka p { font-size: 12px; margin: 2px 0 0; color: #d8e0d8; }
+
+/* ⓘ O dashboardu: rozbalí se přes obsah, nic neposune */
+.info summary { cursor: pointer; font-size: 14px; color: #eef2ee; list-style: none; white-space: nowrap; }
+.info summary::-webkit-details-marker { display: none; }
+.info-obsah {
+  position: absolute; right: 12px; top: 58px; z-index: 50; width: min(560px, 90vw);
+  background: #fcfcfb; color: #0b0b0b; border-radius: 10px; padding: 14px 18px;
+  box-shadow: 0 6px 24px #10243b33; font-size: 14px; line-height: 1.45;
+}
+.info-obsah p { color: #0b0b0b; font-size: 14px; margin: 0 0 8px; }
+.info-obsah .drobne { color: #52514e; font-size: 12px; font-style: italic; margin: 0; }
+
+/* Pruh se záložkami a filtry */
+.ovladani {
+  background: #fcfcfb; border-radius: 12px; padding: 6px 12px;
+  display: flex; align-items: flex-end; gap: 16px;
+}
+.zalozky { flex: 0 0 auto; display: flex; gap: 4px; align-self: stretch; align-items: stretch; }
+.zalozky label {
+  display: flex; align-items: center; padding: 0 60px; border-radius: 8px 8px 0 0;
+  font-size: 23px; font-weight: 700; color: #52514e; background: #ebebe7; cursor: pointer;
+  border-top: 4px solid transparent; margin: 0 !important;
+}
+.zalozky input { display: none; }
+.zalozky label:has(input:checked) { color: #0b0b0b; background: #fcfcfb; border-top-color: #34443a; }
+.vyber { flex: 0 0 auto; }
+/* Filtry k pravému okraji pruhu */
+.zalozky + .vyber { margin-left: auto; }
+.vyber-nazev { display: block; font-size: 12px; font-weight: 700; margin-bottom: 3px; }
+
+/* Panel záložky: zabere zbytek výšky */
+.panel { flex: 1 1 auto; min-height: 0; flex-direction: column; gap: 8px; }
+.akcni-nadpis { font-size: 22px; margin: 2px 2px 0; }
+.akcni-podtitul { font-size: 13px; color: #52514e; margin: 2px 2px 0; }
+
+.radek-kpi { display: flex; gap: 10px; }
+.kpi {
+  flex: 1 1 0; background: #fcfcfb; border-radius: 10px; padding: 8px 14px;
+  box-shadow: 0 2px 8px #10243b10; min-width: 0;
+}
+.kpi-nazev { font-size: 13px; color: #52514e; margin-right: 10px; }
+.kpi-hodnota { font-size: 24px; font-weight: 700; }
+.kpi-popis { font-size: 11px; color: #52514e; }
+
+.radek-grafu { flex: 1 1 auto; min-height: 280px; display: flex; gap: 10px; }
+.karta {
+  background: #fcfcfb; border-radius: 12px; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.graf { flex: 1 1 auto; min-height: 0; height: 100%; }
+
+.paticka { font-size: 11px; color: #52514e; }
+
+/* Úzká obrazovka (telefon, úzké okno): bloky pod sebou, stránka se posouvá */
+@media (max-width: 1000px) {
+  .stranka { height: auto; }
+  .ovladani, .radek-kpi, .radek-grafu, .hlavicka { flex-wrap: wrap; }
+  .radek-grafu { flex-direction: column; }
+  .karta { flex: 0 0 auto !important; height: 440px; }
+
+  .zalozky { flex-basis: 100%; }
+}
+
+/* Kompaktní posuvník roku pod mapou C */
+.posuvnik { padding: 0 14px 6px; flex: 0 0 auto; font-size: 11px; }
